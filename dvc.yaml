@@ -1,0 +1,30 @@
+stages:
+  ingest:
+    cmd: python src/ingest.py
+    params:
+    - TextSplitter
+    deps:
+    - https://github.com/progit/progit2/releases/download/2.1.426/progit.pdf
+    - src/ingest.py
+    outs:
+    - data/docs.json
+  run:
+    cmd: python src/qa.py
+    params:
+    - ChatLLM
+    deps:
+    - data/ground_truths.csv
+    - src/qa.py
+    outs:
+    - data/results.json
+  eval:
+    cmd: python src/eval.py
+    params:
+    - Embeddings
+    - ChatLLM
+    deps:
+    - data/ground_truths.csv
+    - data/results.json
+    - src/eval.py
+    outs:
+    - data/eval.csv

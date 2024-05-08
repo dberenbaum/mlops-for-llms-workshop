@@ -1,0 +1,228 @@
+Q,A
+"I accidentally committed the wrong files to Git, but didn't push the commit to the server yet.
+How do I undo those commits from the local repository?","Undo a commit & redo
+$ git commit -m ""Something terribly misguided"" # (0: Your Accident)
+$ git reset HEAD~                              # (1)
+[ edit files as necessary ]                    # (2)
+$ git add .                                    # (3)
+$ git commit -c ORIG_HEAD                      # (4)
+git reset is the command responsible for the undo. It will undo your last commit while leaving your working tree (the state of your files on disk) untouched. You'll need to add them again before you can commit them again.
+Make corrections to working tree files.
+git add anything that you want to include in your new commit.
+Commit the changes, reusing the old commit message. reset copied the old head to .git/ORIG_HEAD; commit with -c ORIG_HEAD will open an editor, which initially contains the log message from the old commit and allows you to edit it. If you do not need to edit the message, you could use the -C option.
+Alternatively, to edit the previous commit (or just its commit message), commit --amend will add changes within the current index to the previous commit.
+To remove (not revert) a commit that has been pushed to the server, rewriting history with git push origin main --force[-with-lease] is necessary. It's almost always a bad idea to use --force; prefer --force-with-lease instead, and as noted in the git manual:
+You should understand the implications of rewriting history if you amend a commit that has already been published.
+
+Further Reading
+You can use git reflog to determine the SHA-1 for the commit to which you wish to revert. Once you have this value, use the sequence of commands as explained above.
+
+HEAD~ is the same as HEAD~1. The article What is the HEAD in git? is helpful if you want to uncommit multiple commits."
+"Failed Attempts to Delete a Remote Branch:
+$ git branch -d remotes/origin/bugfix
+error: branch 'remotes/origin/bugfix' not found.
+
+$ git branch -d origin/bugfix
+error: branch 'origin/bugfix' not found.
+
+$ git branch -rd origin/bugfix
+Deleted remote branch origin/bugfix (was 2a14ef7).
+
+$ git push
+Everything up-to-date
+
+$ git pull
+From github.com:gituser/gitproject
+
+* [new branch] bugfix -> origin/bugfix
+Already up-to-date.
+How do I properly delete the remotes/origin/bugfix branch both locally and remotely?","Executive Summary
+git push -d <remote_name> <branchname>
+git branch -d <branchname>
+Note: In most cases, <remote_name> will be origin.
+Delete Local Branch
+To delete the local branch, use one of the following:
+git branch -d <branch_name>
+git branch -D <branch_name>
+The -d option is an alias for --delete, which only deletes the branch if it has already been fully merged in its upstream branch.
+The -D option is an alias for --delete --force, which deletes the branch ""irrespective of its merged status."" [Source: man git-branch]
+As of Git v2.3, git branch -d (delete) learned to honor the -f (force) flag.
+You will receive an error if you try to delete the currently selected branch.
+Delete Remote Branch
+As of Git v1.7.0, you can delete a remote branch using
+$ git push <remote_name> --delete <branch_name>
+which might be easier to remember than
+$ git push <remote_name> :<branch_name>
+which was added in Git v1.5.0 ""to delete a remote branch or a tag.""
+Starting with Git v2.8.0, you can also use git push with the -d option as an alias for --delete. Therefore, the version of Git you have installed will dictate whether you need to use the easier or harder syntax.
+Delete Remote Branch [Original Answer from 5-Jan-2010]
+From Chapter 3 of Pro Git by Scott Chacon:
+Deleting Remote Branches
+Suppose you’re done with a remote branch — say, you and your collaborators are finished with a feature and have merged it into your remote’s main branch (or whatever branch your stable code-line is in). You can delete a remote branch using the rather obtuse syntax git push [remotename] :[branch]. If you want to delete your serverfix branch from the server, you run the following:
+$ git push origin :serverfix
+To git@github.com:schacon/simplegit.git
+ - [deleted]         serverfix
+Boom. No more branches on your server. You may want to dog-ear this page, because you’ll need that command, and you’ll likely forget the syntax. A way to remember this command is by recalling the git push [remotename] [localbranch]:[remotebranch] syntax that we went over a bit earlier. If you leave off the [localbranch] portion, then you’re basically saying, “Take nothing on my side and make it be [remotebranch].”
+I ran git push origin :bugfix, and it worked beautifully. Scott Chacon was right—I will want to dog-ear that page (or virtually dog ear-by answering this on Stack Overflow).
+Finally, execute the following on other machines to propagate changes:
+# Fetch changes from all remotes and locally delete 
+# remote deleted branches/tags etc
+# --prune will do the job :-;
+git fetch --all --prune"
+What are the differences between git pull and git fetch?,"
+In the simplest terms, git pull does a git fetch followed by a git merge.
+
+git fetch updates your remote-tracking branches under refs/remotes/<remote>/. This operation is safe to run at any time since it never changes any of your local branches under refs/heads.
+git pull brings a local branch up-to-date with its remote version, while also updating your other remote-tracking branches.
+From the Git documentation for git pull:
+git pull runs git fetch with the given parameters and then depending on configuration options or command line flags, will call either git rebase or git merge to reconcile diverging branches."
+How can I rename a local branch which has not yet been pushed to a remote repository?,"To rename the current branch:
+git branch -m <newname>
+To rename a branch while pointed to any branch:
+git branch -m <oldname> <newname>
+-m is short for --move.
+
+To push the local branch and reset the upstream branch:
+git push origin -u <newname>
+To delete the remote branch:
+git push origin --delete <oldname>
+
+To create a git rename alias:
+git config --global alias.rename 'branch -m'
+
+On Windows or another case-insensitive filesystem, use -M if there are only capitalization changes in the name. Otherwise, Git will throw a ""branch already exists"" error.
+git branch -M <newname>"
+"I mistakenly added files to Git using the command:
+git add myfile.txt
+I have not yet run git commit. How do I undo this so that these changes will not be included in the commit?","To unstage a specific file
+git reset <file>
+That will remove the file from the current index (the ""about to be committed"" list) without changing anything else.
+To unstage all files from the current change set:
+git reset
+
+In old versions of Git, the above commands are equivalent to git reset HEAD <file> and git reset HEAD respectively, and will fail if HEAD is undefined (because you haven't yet made any commits in your repository) or ambiguous (because you created a branch called HEAD, which is a stupid thing that you shouldn't do). This was changed in Git 1.8.2, though, so in modern versions of Git you can use the commands above even prior to making your first commit:
+""git reset"" (without options or parameters) used to error out when you do not have any commits in your history, but it now gives you an empty index (to match non-existent commit you are not even on)."
+"How do I force an overwrite of local files on a git pull? My local repository contains a file of the same filename as on the server.
+error: Untracked working tree file 'example.txt' would be overwritten by merge","Warning:
+Any uncommitted local change to tracked files will be lost, even if staged.
+But any local file that's not tracked by Git will not be affected.
+
+First, update all origin/<branch> refs to latest:
+git fetch --all
+Backup your current branch (e.g. master):
+git branch backup-master
+Jump to the latest commit on origin/master and checkout those files:
+git reset --hard origin/master
+Explanation:
+git fetch downloads the latest from remote without trying to merge or rebase anything.
+git reset resets the master branch to what you just fetched. The --hard option changes all the files in your working tree to match the files in origin/master.
+
+Maintain current local commits
+[*]: It's worth noting that it is possible to maintain current local commits by creating a branch from master before resetting:
+git checkout master
+git branch new-branch-to-save-current-commits
+git fetch --all
+git reset --hard origin/master
+After this, all of the old commits will be kept in new-branch-to-save-current-commits.
+Uncommitted changes
+Uncommitted changes, even if staged (with git add), will be lost. Make sure to stash or commit anything you need. For example, run the following:
+git stash
+And later (after git reset), reapply these uncommitted changes:
+git stash pop
+Which may create merge conflicts."
+"Somebody pushed a branch called test with git push origin test to a shared repository. I can see the branch with git branch -r. How do I check out the remote test branch? I've tried:
+git checkout test, which does nothing
+git checkout origin/test gives * (no branch)","The answer has been split depending on whether there is one remote repository configured or multiple. The reason for this is that for the single remote case, some of the commands can be simplified as there is less ambiguity.
+Updated for Git 2.23: For older versions, see the section at the end.
+With One Remote
+In both cases, start by fetching from the remote repository to make sure you have all the latest changes downloaded.
+$ git fetch
+This will fetch all of the remote branches for you. You can see the branches available for checkout with:
+$ git branch -v -a
+
+...
+remotes/origin/test
+The branches that start with remotes/* can be thought of as read only copies of the remote branches. To work on a branch you need to create a local branch from it. This is done with the Git command switch (since Git 2.23) by giving it the name of the remote branch (minus the remote name):
+$ git switch test
+In this case Git is guessing (can be disabled with --no-guess) that you are trying to checkout and track the remote branch with the same name.
+With Multiple Remotes
+In the case where multiple remote repositories exist, the remote repository needs to be explicitly named.
+As before, start by fetching the latest remote changes:
+$ git fetch origin
+This will fetch all of the remote branches for you. You can see the branches available for checkout with:
+$ git branch -v -a
+With the remote branches in hand, you now need to check out the branch you are interested in with -c to create a new local branch:
+$ git switch -c test origin/test
+For more information about using git switch:
+$ man git-switch
+Prior to Git 2.23
+git switch was added in Git 2.23, prior to this git checkout was used to switch branches.
+To checkout out with only a single remote repository:
+git checkout test
+if there are multiple remote repositories configured then it becomes a bit longer
+git checkout -b test <name of remote>/test"
+"I put a file that was previously being tracked by Git onto the .gitignore list. However, the file still shows up in git status after it is edited. How do I force Git to completely forget the file?",".gitignore will prevent untracked files from being added (without an add -f) to the set of files tracked by Git. However, Git will continue to track any files that are already being tracked.
+To stop tracking a file, we must remove it from the index:
+git rm --cached <file>
+To remove a folder and all files in the folder recursively:
+git rm -r --cached <folder>
+The removal of the file from the head revision will happen on the next commit.
+WARNING: While this will not remove the physical file from your local machine, it will remove the files from other developers' machines on their next git pull."
+How do I delete untracked local files from the current working tree?,"git-clean - Remove untracked files from the working tree
+Synopsis
+git clean [-d] [-f] [-i] [-n] [-q] [-e <pattern>] [-x | -X] [--] <path>…​
+Description
+Cleans the working tree by recursively removing files that are not under version control, starting from the current directory.
+Normally, only files unknown to Git are removed, but if the -x option is specified, ignored files are also removed. This can, for example, be useful to remove all build products.
+If any optional <path>... arguments are given, only those paths are affected.
+
+Step 1 is to show what will be deleted by using the -n option:
+# Print out the list of files and directories which will be removed (dry run)
+git clean -n -d
+Clean Step - beware: this will delete files:
+# Delete the files from the repository
+git clean -f
+To remove directories, run git clean -f -d or git clean -fd
+To remove ignored files, run git clean -f -X or git clean -fX
+To remove ignored and non-ignored files, run git clean -f -x or git clean -fx
+Note the case difference on the X for the two latter commands.
+If clean.requireForce is set to ""true"" (the default) in your configuration, one needs to specify -f otherwise nothing will actually happen.
+Again see the git-clean docs for more information.
+
+Options
+-f, --force
+If the Git configuration variable clean.requireForce is not set to false, git clean will refuse to run unless given -f, -n or -i.
+-x
+Don’t use the standard ignore rules read from .gitignore (per directory) and $GIT_DIR/info/exclude, but do still use the ignore rules given with -e options. This allows removing all untracked files, including build products. This can be used (possibly in conjunction with git reset) to create a pristine working directory to test a clean build.
+-X
+Remove only files ignored by Git. This may be useful to rebuild everything from scratch, but keep manually created files.
+-n, --dry-run
+Don’t actually remove anything, just show what would be done.
+-d
+Remove untracked directories in addition to untracked files. If an untracked directory is managed by a different Git repository, it is not removed by default. Use -f option twice if you really want to remove such a directory."
+"I wrote the wrong thing in a commit message.
+How can I change the message? The commit has not been pushed yet.","Amending the most recent commit message
+git commit --amend
+will open your editor, allowing you to change the commit message of the most recent commit. Additionally, you can set the commit message directly in the command line with:
+git commit --amend -m ""New commit message""
+…however, this can make multi-line commit messages or small corrections more cumbersome to enter.
+Make sure you don't have any working copy changes staged before doing this or they will get committed too. (Unstaged changes will not get committed.)
+Changing the message of a commit that you've already pushed to your remote branch
+If you've already pushed your commit up to your remote branch, then - after amending your commit locally (as described above) - you'll also need to force push the commit with:
+git push <remote> <branch> --force
+# Or
+git push <remote> <branch> -f
+Warning: force-pushing will overwrite the remote branch with the state of your local one. If there are commits on the remote branch that you don't have in your local branch, you will lose those commits.
+Warning: be cautious about amending commits that you have already shared with other people. Amending commits essentially rewrites them to have different SHA IDs, which poses a problem if other people have copies of the old commit that you've rewritten. Anyone who has a copy of the old commit will need to synchronize their work with your newly re-written commit, which can sometimes be difficult, so make sure you coordinate with others when attempting to rewrite shared commit history, or just avoid rewriting shared commits altogether.
+
+Perform an interactive rebase
+Another option is to use interactive rebase. This allows you to edit any message you want to update even if it's not the latest message.
+In order to do a Git squash, follow these steps:
+// n is the number of commits up to the last commit you want to be able to edit
+git rebase -i HEAD~n
+Once you squash your commits - choose the e/r for editing the message:
+
+Important note about interactive rebase
+When you use git rebase -i HEAD~n there can be more than n commits. Git will ""collect"" all the commits in the last n commits, and if there was a merge somewhere in between that range you will see all the commits as well, so the outcome will be n + .
+Good tip:
+If you have to do it for more than a single branch and you might face conflicts when amending the content, set up git rerere and let Git resolve those conflicts automatically for you."

@@ -1,0 +1,66 @@
+Q,A
+"Im constructing a pipeline with several stages inside the dvc.yaml file.
+When I execute dvc exp run or dvc repro commands, stages run randomly. What is the reason behind this or did I miss something?","In order to ensure linear order in your pipeline, you should concatenate all your pipeline stages, taking into account that the previous stage output will be the next dependency, from the beginning to the end of your pipeline. Please make sure that you specify dependencies and outputs for each stage: that will introduce the order to provide an end result. For stages that don´t depend on each other, they will still executed randomly.
+
+As an example, imagine that we have 3 stages: load , feature engineering and training. Load output with be feature engineering dependency, and feature engineering output will be training dependency.
+
+The key concept to have into account here is that you should concatenate the output of one stage as the dependency of the other among all pipeline stages.
+
+As an example, added some schema from our learning course: check out the -o and -d config flags. Those will be key for concatenating your stages."
+How can I clean up the remote caches after a lot of experiments and branches have been pushed?,"dvc exp gc requires some kind of flags to operate. At the very least, --workspace. So, with --workspace, dvc will try to read all of the pointer files: .dvc files and dvc.yaml`` files in the workspace. It will read all of them and will determine all the cache objects/files that need to be preserved (since they are being used in the current workspace). The rest of the files in the .dvc/cache are removed.
+
+This does not require any Git operations!
+
+You can also use the --all-branches flag. It will read all of the files present in the current workspace and from the commits in the branches you have locally. Then it will use that list to determine what to keep and what to remove.
+
+If you need to read pointer files from given tags you have locally, the --all-tags flag is the best option.
+
+The --all-commits flag reads pointer files from every commit and it will make a list of all the files that are in the cache/remote and if the .dvc` file isn't found in any commits of the Git repo, it will delete those files."
+What is the difference between `dvc repro` and `dvc exp run`?,"TL:DR: Use dvc exp run unless you know you would specifically prefer dvc repro.
+Both commands run your code pipeline, and dvc exp run mostly serves as a drop-in replacement for the older dvc repro, even if you are more interested in reproducing a pipeline than running an experiment. Each time you dvc repro, you lose your previous pipeline run unless you have committed it to Git.  dvc exp run saves the results to Git automatically. dvc exp run also adds other features, like modifying parameters on the fly with --set-param, using the --queue, and Hydra composition. If you are sure that you don’t need the added features of dvc exp run and want to avoid some additional overhead, then you may find that dvc repro better serves your needs."
+"How does DVC solve the file versioning problem, specifically when we want to roll back to previous versions of the dataset?","Time travel with DVC; that's our specialty! 
+
+git checkout command lets us restore any commit in the repository history. It will automatically adjust the repository files, by replacing, adding or deleting them. This git command changes dvc.lock and another DVC files, meaning that git tracks DVC files, but doesn´t track the file per se. For this to happen and get back to previous versions of the dataset, make sure to dvc checkout on this one.
+
+For reproducibility, we will see now what happens with the data.dvc file and cache folder when we go back to a previous dataset version. For that, we will add a dataset, change it and add it to DVC, and then get back to the first dataset version.
+
+First, we have added a dataset, and then add it as well with DVC: if we explore the data.xml.dvc file and the cache folder , we will see the MD5 hash for the file, a unique identifier!
+
+$ cat data.xml.dvc # will show file info including MD5 hash
+outs:
+- md5: a8d60da582524dac805fc7b64d762e58
+  size: 33471
+  path: data.xml
+$ cd .dvc/cache
+$ tree # will show dataset in the cache with hash reference
+.
+|___ a8
+     |___ a8d60da582524dac805fc7b64d762e58
+
+After changing the dataset, we have added it to DVC as well. As you can see in data.xml.dvc file, the hash MD5 has changed, as the dataset is different! The cache , however keeps both hashes. Smart!
+
+$ cat data.xml.dvc # will show new file info including MD5 hash
+outs:
+- md5: 8e4ed00d7118e31340db6c0ba572658e
+  size: 35263
+  path: data.xml
+$ cd .dvc/cache
+$ tree # will show both datasets in the cache with their hash reference
+.
+|___ 8e
+|    |___ 4ed00d7118e31340db6c0ba572658e
+|___ a8
+     |___ d60da582524dac805fc7b64d762e58
+
+Now let´s get back to the previous version of the dataset
+
+$ git checkout HEAD~1 data/data.xml.dvc
+$ **dvc checkout**$ git commit data/data.xml.dvc
+
+$ cat data.xml.dvc
+outs:
+- md5: a8d60da582524dac805fc7b64d762e58
+  size: 33471
+  path: data.xml
+
+Interesting! The hash makes reference to the previous version of our dataset that has been stored in our cache folder. The cache folder saves the data so DVC allows you to get back to previous files with the synced git checkout and dvc checkout commands. Please note that you have to checkout with Git, but also with DVC! If you always want to ensure dvc checkout after git checkout you can use post-chekout Git hook to automatically update the workspace with the correct data file versions."

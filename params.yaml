@@ -1,0 +1,11 @@
+TextSplitter:
+  chunk_size: 1500
+  chunk_overlap: 0
+Embeddings:
+  model_name: 'sentence-transformers/all-mpnet-base-v2'
+  model_kwargs:
+    device: cpu
+  encode_kwargs:
+    normalize_embeddings: true
+ChatLLM:
+  repo_id: 'HuggingFaceH4/zephyr-7b-beta'

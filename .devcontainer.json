@@ -1,0 +1,6 @@
+{
+    "name": "mlops-for-llms-workshop",
+    "image": "mcr.microsoft.com/devcontainers/anaconda",
+    "extensions": ["ms-python.python", "ms-toolsai.jupyter"],
+    "postCreateCommand": "bash setup.sh"
+}

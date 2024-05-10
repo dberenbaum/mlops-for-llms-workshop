@@ -24,7 +24,7 @@ In order to set your environment up to run the code here, first install all requ
 ```shell
 conda create -n mlops-for-llms-workshop --python=python3.11
 conda activate mlops-for-llms-workshop
-conda install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 Then set your Hugging Face API key (if you don't have one, get one

@@ -13,7 +13,7 @@ It was initially inspired by https://github.com/hwchase17/notion-qa.
 
 First you need to do a git pull of the code:
 ```shell
-git clone git@github.com:iterative/llm-demo.git
+git clone git@github.com:dberenbaum/mlops-for-llms-workshop.git
 cd llm-demo
 ```
 

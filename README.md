@@ -22,7 +22,7 @@ environment (note: the FAISS dependency will not work without Anaconda).
 
 In order to set your environment up to run the code here, first install all requirements in a conda env:
 ```shell
-conda create -n mlops-for-llms-workshop --python=python3.11
+conda create -n mlops-for-llms-workshop --python=3.11
 conda activate mlops-for-llms-workshop
 pip install -r requirements.txt
 ```
